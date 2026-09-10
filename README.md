@@ -157,7 +157,93 @@ graph TD
     end
 ```
 
-### 3.2 Data Flow Diagram (DFD)
+### 3.2 End-to-End Operational Mermaid Flowchart
+
+```mermaid
+flowchart TD
+    %% Node Styles
+    classDef startEnd fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef process fill:#0f172a,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
+    classDef decision fill:#312e81,stroke:#a855f7,stroke-width:2px,color:#fff;
+    classDef event fill:#064e3b,stroke:#34d399,stroke-width:1px,color:#ecfdf5;
+
+    Start([🚀 User Opens Web App]) :::startEnd --> InitDOM[Mount React Page Component & Refs] :::process
+    
+    InitDOM --> ReqCam{Request Webcam Access\nnavigator.mediaDevices.getUserMedia} :::decision
+    
+    ReqCam -- Permission Denied --> ErrCam[Show Camera Access Error Banner] :::process
+    ReqCam -- Permission Granted --> StreamVideo[Stream Video to HTML5 video Element] :::process
+    
+    StreamVideo --> LoadWASM[Load MediaPipe Tasks Vision WASM & Models] :::process
+    LoadWASM --> InitThree[Initialize Three.js Camera, Scene, Lights & Tank] :::process
+    
+    InitThree --> StartLoops[Start Asynchronous Dual Loops] :::event
+
+    subgraph Vision & Gesture Processing Loop
+        StartLoops --> CheckVideoFrame{New Video Frame Available?} :::decision
+        CheckVideoFrame -- No --> CheckVideoFrame
+        CheckVideoFrame -- Yes --> MPInference[Execute gestureRecognizer.recognizeForVideo] :::process
+        
+        MPInference --> HandDetected{Hand Landmarks Detected?} :::decision
+        
+        HandDetected -- No --> GraceTimer{Release Grace Timer > 300ms?} :::decision
+        GraceTimer -- Yes --> ReleaseStroke[Release Active Stroke to Falling State] :::process
+        GraceTimer -- No --> CheckVideoFrame
+        
+        HandDetected -- Yes --> DrawSkeleton[Draw 2D Skeleton Overlay on Canvas] :::process
+        DrawSkeleton --> EvalPinch{Evaluate Pinch Ratio\nThumbTip-IndexTip / PalmSize < 0.35} :::decision
+        
+        EvalPinch -- Yes --> ApplyEMA[Apply EMA Low-Pass Filter to Point] :::process
+        ApplyEMA --> Unproject[Unproject 2D Point into 3D Tank World Space] :::process
+        
+        Unproject --> HasActiveStroke{Active Stroke Exists?} :::decision
+        HasActiveStroke -- No --> CreateStroke[Instantiate New BalloonStroke & CatmullRom Curve] :::process
+        HasActiveStroke -- Yes --> ExtendStroke[Append Point & Rebuild TubeGeometry Mesh] :::process
+        
+        EvalPinch -- No --> CheckWave{Open Palm Gesture Detected?} :::decision
+        
+        CheckWave -- Yes --> CalcWind[Calculate Wrist Velocity Vector ΔP / Δt] :::process
+        CalcWind --> UpdateWindField[Update Global Wind Target Vector] :::process
+        
+        CheckWave -- No --> CheckHold{Fist / Victory Gesture Held?} :::decision
+        CheckHold -- Yes --> HoldTimer[Accrue Hold Duration Counter] :::process
+        HoldTimer --> HoldComplete{Hold Time >= 3.0 Seconds?} :::decision
+        HoldComplete -- Yes --> ExecuteAction[Trigger Clear Canvas OR Toggle Theme] :::process
+        HoldComplete -- No --> CheckVideoFrame
+        CheckHold -- No --> CheckVideoFrame
+    end
+
+    subgraph 60 FPS Physics & Render Loop
+        StartLoops --> RAF[requestAnimationFrame Physics Ticker] :::process
+        RAF --> StepPhysics[Execute stepPhysics deltaSeconds] :::process
+        
+        StepPhysics --> Repulsion[Apply Pairwise Lateral Repulsion Forces] :::process
+        Repulsion --> IntegrateGravity[Integrate Gravity, Air Drag & Harmonic Sway] :::process
+        IntegrateGravity --> ApplyWind[Transfer Wind Field Momentum to Strokes] :::process
+        
+        ApplyWind --> BoundaryCheck{Stroke Hits Wall or Floor Bounds?} :::decision
+        
+        BoundaryCheck -- Wall Collision --> WallBounce[Apply Wall Restitution Bounce] :::process
+        BoundaryCheck -- Ground Collision --> FloorMechanics[Apply Ground Restitution & Bounce Damping] :::process
+        
+        FloorMechanics --> CheckTopple{Center of Mass Offset > Threshold?} :::decision
+        CheckTopple -- Yes --> InduceTorque[Calculate Angular Velocity & Rotate Points around Pivot] :::process
+        CheckTopple -- No --> CheckSettle{Speed & Topple Below Settle Thresholds?} :::decision
+        
+        CheckSettle -- Yes 12 Frames --> MarkSettled[Mark Stroke as Settled] :::process
+        CheckSettle -- No --> DeformStretch[Update Dynamic Viscoelastic Stretch Radius] :::process
+        
+        DeformStretch --> RenderScene[Render Three.js WebGL Scene & Shadows] :::process
+        MarkSettled --> RenderScene
+        InduceTorque --> RenderScene
+        WallBounce --> RenderScene
+        
+        RenderScene --> FrameOutput([📺 Output Frame to Screen]) :::startEnd
+        FrameOutput --> RAF
+    end
+```
+
+### 3.3 Data Flow Diagram (DFD)
 
 ```
 [Webcam Feed] ──► [MediaPipe WASM Model] ──► [21 Keypoint 3D Vector]
