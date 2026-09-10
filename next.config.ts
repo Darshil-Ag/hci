@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const pagesBasePath = "/hand-gesture-whiteboard";
+const pagesBasePath = process.env.NEXT_PUBLIC_BASE_PATH || "/hci";
 const isPagesBuild =
   process.env.GITHUB_ACTIONS === "true" ||
   process.env.NEXT_PUBLIC_DEPLOY_TARGET === "gh-pages";
