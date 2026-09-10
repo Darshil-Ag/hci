@@ -107,53 +107,49 @@ Existing touchless drawing tools either require expensive depth-sensing hardware
 ### 3.1 Structural Mermaid Diagram
 
 ```mermaid
-graph TD
-    subgraph Client Browser Application
+flowchart TD
+    subgraph L1 ["Layer 1: Input and Media Acquisition"]
+        A["Webcam / RGB Camera"] -->|MediaStream API| B["HTML5 Video Element"]
+    end
+
+    subgraph L2 ["Layer 2: Machine Learning and Vision Pipeline (WASM)"]
+        B -->|Video Frames| C["FilesetResolver and GestureRecognizer"]
+        C -->|MediaPipe Tasks Vision| D["21 3D Hand Landmark Coordinates"]
+    end
+
+    subgraph L3 ["Layer 3: Signal Processing and Gesture Classification"]
+        D --> E["Scale-Invariant Pinch Evaluator"]
+        D --> F["Kinematic Wave Wind Field Calculator"]
+        D --> G["Stateful Hold Action Timer"]
         
-        subgraph Layer 1: Input & Media Acquisition
-            A[Webcam / RGB Camera] -->|MediaStream API| B[HTML5 Video Element]
-        end
+        E -->|Pinch Ratio < 0.35| H["EMA Low-Pass Signal Filter"]
+        H -->|Alpha = 0.30| I["2D to 3D World Unprojection"]
+    end
 
-        subgraph Layer 2: Machine Learning & Vision Pipeline (WASM)
-            B -->|Video Frames| C[FilesetResolver & GestureRecognizer]
-            C -->|MediaPipe Tasks Vision| D[21 3D Hand Landmark Coordinates]
-        end
+    subgraph L4 ["Layer 4: Procedural Geometry and Mesh Engine"]
+        I -->|Smoothed World Points| J["CatmullRomCurve3 Spline"]
+        J --> K["TubeGeometry Generator and Sphere End-Caps"]
+        K -->|Dynamic Mesh Buffer| L["BalloonStroke State Object"]
+    end
 
-        subgraph Layer 3: Signal Processing & Gesture Classification
-            D --> E[Scale-Invariant Pinch Evaluator]
-            D --> F[Kinematic Wave Wind Field Calculator]
-            D --> G[Stateful Hold Action Timer]
-            
-            E -->|Pinch Ratio < 0.35| H[EMA Low-Pass Signal Filter]
-            H -->|Alpha = 0.30| I[2D to 3D World Unprojection]
-        end
+    subgraph L5 ["Layer 5: Custom 3D Newtonian Physics Engine (60 FPS)"]
+        L --> M["Physics Ticker Solver"]
+        F -->|Wind Vectors| M
+        
+        M --> N["Gravity and Air Drag Integration"]
+        M --> O["Pairwise Inter-Stroke Repulsion"]
+        M --> P["Wall and Floor Restitution Bounce"]
+        M --> Q["Ground Contact Pivot and Toppling Settlement"]
+    end
 
-        subgraph Layer 4: Procedural Geometry & Mesh Engine
-            I -->|Smoothed World Points| J[CatmullRomCurve3 Spline]
-            J --> K[TubeGeometry Generator & Sphere End-Caps]
-            K -->|Dynamic Mesh Buffer| L[BalloonStroke State Object]
-        end
-
-        subgraph Layer 5: Custom 3D Newtonian Physics Engine (60 FPS)
-            L --> M[Physics Ticker Solver]
-            F -->|Wind Vectors| M
-            
-            M --> N[Gravity & Air Drag Integration]
-            M --> O[Pairwise Inter-Stroke Repulsion]
-            M --> P[Wall & Floor Restitution Bounce]
-            M --> Q[Ground Contact Pivot & Toppling Settlement]
-        end
-
-        subgraph Layer 6: WebGL Graphics & UI Render Pass
-            Q --> R[Three.js Scene Graph]
-            G -->|Clear Canvas / Theme Toggle| R
-            
-            R -->|Shadows, Lights, Mesh Updates| S[Three.js WebGLRenderer]
-            S --> T[Canvas Screen Output]
-            
-            D -->|Hand Skeleton Overlay| U[2D Canvas Overlay]
-        end
-
+    subgraph L6 ["Layer 6: WebGL Graphics and UI Render Pass"]
+        Q --> R["Three.js Scene Graph"]
+        G -->|Clear Canvas / Theme Toggle| R
+        
+        R -->|Shadows, Lights, Mesh Updates| S["Three.js WebGLRenderer"]
+        S --> T["Canvas Screen Output"]
+        
+        D -->|Hand Skeleton Overlay| U["2D Canvas Overlay"]
     end
 ```
 
@@ -161,84 +157,78 @@ graph TD
 
 ```mermaid
 flowchart TD
-    %% Node Styles
-    classDef startEnd fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#fff;
-    classDef process fill:#0f172a,stroke:#818cf8,stroke-width:1px,color:#f8fafc;
-    classDef decision fill:#312e81,stroke:#a855f7,stroke-width:2px,color:#fff;
-    classDef event fill:#064e3b,stroke:#34d399,stroke-width:1px,color:#ecfdf5;
+    Start["🚀 User Opens Web App"] --> InitDOM["Mount React Page Component and Refs"]
+    
+    InitDOM --> ReqCam{"Request Webcam Access<br/>navigator.mediaDevices.getUserMedia"}
+    
+    ReqCam -- Permission Denied --> ErrCam["Show Camera Access Error Banner"]
+    ReqCam -- Permission Granted --> StreamVideo["Stream Video to HTML5 Video Element"]
+    
+    StreamVideo --> LoadWASM["Load MediaPipe Tasks Vision WASM and Models"]
+    LoadWASM --> InitThree["Initialize Three.js Camera, Scene, Lights and Tank"]
+    
+    InitThree --> StartLoops["Start Asynchronous Dual Loops"]
 
-    Start([🚀 User Opens Web App]) :::startEnd --> InitDOM[Mount React Page Component & Refs] :::process
-    
-    InitDOM --> ReqCam{Request Webcam Access\nnavigator.mediaDevices.getUserMedia} :::decision
-    
-    ReqCam -- Permission Denied --> ErrCam[Show Camera Access Error Banner] :::process
-    ReqCam -- Permission Granted --> StreamVideo[Stream Video to HTML5 video Element] :::process
-    
-    StreamVideo --> LoadWASM[Load MediaPipe Tasks Vision WASM & Models] :::process
-    LoadWASM --> InitThree[Initialize Three.js Camera, Scene, Lights & Tank] :::process
-    
-    InitThree --> StartLoops[Start Asynchronous Dual Loops] :::event
-
-    subgraph Vision & Gesture Processing Loop
-        StartLoops --> CheckVideoFrame{New Video Frame Available?} :::decision
+    subgraph VLoop ["Vision and Gesture Processing Loop"]
+        StartLoops --> CheckVideoFrame{"New Video Frame Available?"}
         CheckVideoFrame -- No --> CheckVideoFrame
-        CheckVideoFrame -- Yes --> MPInference[Execute gestureRecognizer.recognizeForVideo] :::process
+        CheckVideoFrame -- Yes --> MPInference["Execute gestureRecognizer.recognizeForVideo"]
         
-        MPInference --> HandDetected{Hand Landmarks Detected?} :::decision
+        MPInference --> HandDetected{"Hand Landmarks Detected?"}
         
-        HandDetected -- No --> GraceTimer{Release Grace Timer > 300ms?} :::decision
-        GraceTimer -- Yes --> ReleaseStroke[Release Active Stroke to Falling State] :::process
+        HandDetected -- No --> GraceTimer{"Release Grace Timer > 300ms?"}
+        GraceTimer -- Yes --> ReleaseStroke["Release Active Stroke to Falling State"]
         GraceTimer -- No --> CheckVideoFrame
         
-        HandDetected -- Yes --> DrawSkeleton[Draw 2D Skeleton Overlay on Canvas] :::process
-        DrawSkeleton --> EvalPinch{Evaluate Pinch Ratio\nThumbTip-IndexTip / PalmSize < 0.35} :::decision
+        HandDetected -- Yes --> DrawSkeleton["Draw 2D Skeleton Overlay on Canvas"]
+        DrawSkeleton --> EvalPinch{"Evaluate Pinch Ratio<br/>ThumbTip-IndexTip / PalmSize < 0.35"}
         
-        EvalPinch -- Yes --> ApplyEMA[Apply EMA Low-Pass Filter to Point] :::process
-        ApplyEMA --> Unproject[Unproject 2D Point into 3D Tank World Space] :::process
+        EvalPinch -- Yes --> ApplyEMA["Apply EMA Low-Pass Filter to Point"]
+        ApplyEMA --> Unproject["Unproject 2D Point into 3D Tank World Space"]
         
-        Unproject --> HasActiveStroke{Active Stroke Exists?} :::decision
-        HasActiveStroke -- No --> CreateStroke[Instantiate New BalloonStroke & CatmullRom Curve] :::process
-        HasActiveStroke -- Yes --> ExtendStroke[Append Point & Rebuild TubeGeometry Mesh] :::process
+        Unproject --> HasActiveStroke{"Active Stroke Exists?"}
+        HasActiveStroke -- No --> CreateStroke["Instantiate New BalloonStroke and CatmullRom Curve"]
+        HasActiveStroke -- Yes --> ExtendStroke["Append Point and Rebuild TubeGeometry Mesh"]
         
-        EvalPinch -- No --> CheckWave{Open Palm Gesture Detected?} :::decision
+        EvalPinch -- No --> CheckWave{"Open Palm Gesture Detected?"}
         
-        CheckWave -- Yes --> CalcWind[Calculate Wrist Velocity Vector ΔP / Δt] :::process
-        CalcWind --> UpdateWindField[Update Global Wind Target Vector] :::process
+        CheckWave -- Yes --> CalcWind["Calculate Wrist Velocity Vector Delta P / Delta t"]
+        CalcWind --> UpdateWindField["Update Global Wind Target Vector"]
         
-        CheckWave -- No --> CheckHold{Fist / Victory Gesture Held?} :::decision
-        CheckHold -- Yes --> HoldTimer[Accrue Hold Duration Counter] :::process
-        HoldTimer --> HoldComplete{Hold Time >= 3.0 Seconds?} :::decision
-        HoldComplete -- Yes --> ExecuteAction[Trigger Clear Canvas OR Toggle Theme] :::process
+        CheckWave -- No --> CheckHold{"Fist / Victory Gesture Held?"}
+        CheckHold -- Yes --> HoldTimer["Accrue Hold Duration Counter"]
+        HoldTimer --> HoldComplete{"Hold Time >= 3.0 Seconds?"}
+        HoldComplete -- Yes --> ExecuteAction["Trigger Clear Canvas OR Toggle Theme"]
         HoldComplete -- No --> CheckVideoFrame
         CheckHold -- No --> CheckVideoFrame
     end
 
-    subgraph 60 FPS Physics & Render Loop
-        StartLoops --> RAF[requestAnimationFrame Physics Ticker] :::process
-        RAF --> StepPhysics[Execute stepPhysics deltaSeconds] :::process
+    subgraph PLoop ["60 FPS Physics and Render Loop"]
+        StartLoops --> RAF["requestAnimationFrame Physics Ticker"]
+        RAF --> StepPhysics["Execute stepPhysics deltaSeconds"]
         
-        StepPhysics --> Repulsion[Apply Pairwise Lateral Repulsion Forces] :::process
-        Repulsion --> IntegrateGravity[Integrate Gravity, Air Drag & Harmonic Sway] :::process
-        IntegrateGravity --> ApplyWind[Transfer Wind Field Momentum to Strokes] :::process
+        StepPhysics --> Repulsion["Apply Pairwise Lateral Repulsion Forces"]
+        Repulsion --> IntegrateGravity["Integrate Gravity, Air Drag and Harmonic Sway"]
+        IntegrateGravity --> ApplyWind["Transfer Wind Field Momentum to Strokes"]
         
-        ApplyWind --> BoundaryCheck{Stroke Hits Wall or Floor Bounds?} :::decision
+        ApplyWind --> BoundaryCheck{"Stroke Hits Wall or Floor Bounds?"}
         
-        BoundaryCheck -- Wall Collision --> WallBounce[Apply Wall Restitution Bounce] :::process
-        BoundaryCheck -- Ground Collision --> FloorMechanics[Apply Ground Restitution & Bounce Damping] :::process
+        BoundaryCheck -- Wall Collision --> WallBounce["Apply Wall Restitution Bounce"]
+        BoundaryCheck -- Ground Collision --> FloorMechanics["Apply Ground Restitution and Bounce Damping"]
         
-        FloorMechanics --> CheckTopple{Center of Mass Offset > Threshold?} :::decision
-        CheckTopple -- Yes --> InduceTorque[Calculate Angular Velocity & Rotate Points around Pivot] :::process
-        CheckTopple -- No --> CheckSettle{Speed & Topple Below Settle Thresholds?} :::decision
+        FloorMechanics --> CheckTopple{"Center of Mass Offset > Threshold?"}
+        CheckTopple -- Yes --> InduceTorque["Calculate Angular Velocity and Rotate Points around Pivot"]
+        CheckTopple -- No --> CheckSettle{"Speed and Topple Below Settle Thresholds?"}
         
-        CheckSettle -- Yes 12 Frames --> MarkSettled[Mark Stroke as Settled] :::process
-        CheckSettle -- No --> DeformStretch[Update Dynamic Viscoelastic Stretch Radius] :::process
+        CheckSettle -- Yes 12 Frames --> MarkSettled["Mark Stroke as Settled"]
+        CheckSettle -- No --> DeformStretch["Update Dynamic Viscoelastic Stretch Radius"]
         
-        DeformStretch --> RenderScene[Render Three.js WebGL Scene & Shadows] :::process
+        DeformStretch --> RenderScene["Render Three.js WebGL Scene and Shadows"]
         MarkSettled --> RenderScene
         InduceTorque --> RenderScene
         WallBounce --> RenderScene
         
-        RenderScene --> FrameOutput([📺 Output Frame to Screen]) :::startEnd
+        RenderScene --> FrameOutput["📺 Output Frame to Screen"]
         FrameOutput --> RAF
     end
 ```
